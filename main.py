@@ -1,34 +1,47 @@
 import phonenumbers
-from phonenumbers import geocoder
-from phonenumbers import carrier
-import opencage
+from phonenumbers import geocoder, carrier
 from opencage.geocoder import OpenCageGeocode
 import folium
 
+# Replace with your actual API Key
+API_KEY = "your_api_key"
 
-key = "your key" #Geocoder API Key needs to paste here "your key" 
-number = input("please giver your number: ")
-new_number = phonenumbers.parse(number)
-location = geocoder.description_for_number(new_number, "en")
-print(location)
+# Get phone number input
+number = input("Please enter your phone number with country code (e.g., +1234567890): ")
 
-service_name = carrier.name_for_number(new_number,"en")
-print(service_name)
+# Parse phone number
+try:
+    new_number = phonenumbers.parse(number)
+    
+    # Get location
+    location = geocoder.description_for_number(new_number, "en")
+    print(f"Location: {location}")
 
-geocoder = OpenCageGeocode(key)
-query = str(location)
-result = geocoder.geocode(query)
-#print(result)
+    # Get carrier name
+    service_name = carrier.name_for_number(new_number, "en")
+    print(f"Carrier: {service_name}")
 
-lat = result[0]['geometry']['lat']
-lng = result[0]['geometry']['lng']
+    # Initialize OpenCage Geocoder
+    oc_geocoder = OpenCageGeocode(API_KEY)
+    
+    # Get coordinates
+    result = oc_geocoder.geocode(location)
+    
+    if result and len(result) > 0:
+        lat = result[0]['geometry']['lat']
+        lng = result[0]['geometry']['lng']
+        print(f"Coordinates: {lat}, {lng}")
 
-print(lat,lng)
+        # Create map
+        my_map = folium.Map(location=[lat, lng], zoom_start=9)
+        folium.Marker([lat, lng], popup=location).add_to(my_map)
 
-my_map = folium.Map(location=[lat,lng], zoom_start=9)
-folium.Marker([lat, lng], popup= location).add_to(my_map)
+        # Save map
+        my_map.save("location.html")
+        print("Location tracking completed. Open 'location.html' to view the map.")
 
-my_map.save("location.html")
+    else:
+        print("Could not find location coordinates.")
 
-print("location tracking completed")
-print("Thank you")
+except Exception as e:
+    print(f"Error: {e}")
